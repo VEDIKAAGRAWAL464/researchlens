@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Responsive Meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ResearchLens </title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar">
+        <div class="logo">ResearchLens</div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Explore</a>
+            <a href="#">Documentation</a>
+        </div>
+    </nav>
+
+
+    <!-- ================= HERO SECTION ================= -->
+    <section class="hero">
+        <h1 class="fade-in">Smarter Literature Reviews</h1>
+        <p class="fade-in delay">
+            AI-powered structured summaries for researchers
+        </p>
+
+        <div class="search-container">
+            <input type="text" placeholder="Enter research topic..." id="searchInput">
+            <button id="searchBtn">Search</button>
+        </div>
+    </section>
+
+
+    <!-- ================= RESULTS SECTION ================= -->
+    <section class="results" id="resultsSection">
+
+        <!-- Sample Card 1 -->
+        <div class="paper-card">
+            <h3>Artificial Intelligence in Healthcare</h3>
+            <p><strong>Authors:</strong> John Smith et al.</p>
+            <p><strong>Year:</strong> 2024</p>
+            <p class="abstract-preview">
+                This paper explores the integration of AI techniques into modern healthcare systems...
+            </p>
+            <button class="view-btn">View Structured Summary</button>
+        </div>
+
+        <!-- Sample Card 2 -->
+        <div class="paper-card">
+            <h3>Deep Learning for Climate Prediction</h3>
+            <p><strong>Authors:</strong> A. Kumar et al.</p>
+            <p><strong>Year:</strong> 2023</p>
+            <p class="abstract-preview">
+                A transformer-based model for improving climate forecasting accuracy...
+            </p>
+            <button class="view-btn">View Structured Summary</button>
+        </div>
+
+    </section>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+        <p>© 2026 ResearchLens | Built for Academic Excellence</p>
+    </footer>
+
+
+    <!-- JS -->
+    <script src="script.js"></script>
+
+</body>
+</html>
