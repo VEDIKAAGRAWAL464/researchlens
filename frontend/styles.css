@@ -11,7 +11,7 @@ body {
     background: linear-gradient(135deg, #0f172a, #1e293b);
     color: white;
     min-height: 100vh;
-    transition: background 0.4s ease, color 0.4s ease;
+    transition: all 0.4s ease;
 }
 
 /* ================= NAVBAR ================= */
@@ -23,7 +23,6 @@ body {
     padding: 20px 60px;
     background: rgba(255, 255, 255, 0.05);
 
-    /* Safari Support */
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 
@@ -35,15 +34,13 @@ body {
 .logo {
     font-size: 22px;
     font-weight: 700;
-    letter-spacing: 1px;
 }
 
 .nav-links a {
     margin-left: 25px;
     text-decoration: none;
     color: white;
-    font-weight: 400;
-    transition: all 0.3s ease;
+    transition: 0.3s;
 }
 
 .nav-links a:hover {
@@ -56,20 +53,15 @@ body {
     color: white;
     font-size: 18px;
     cursor: pointer;
-    transition: transform 0.3s ease;
 }
 
-.theme-btn:hover {
-    transform: rotate(20deg);
-}
-
-/* ================= HERO SECTION ================= */
+/* ================= HERO ================= */
 
 .hero {
     position: relative;
     height: 85vh;
     background: url("https://images.unsplash.com/photo-1531482615713-2afd69097998")
-        no-repeat center center/cover;
+        no-repeat center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -80,22 +72,20 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.75);
+    transition: 0.4s;
 }
 
 .hero-content {
     position: relative;
     text-align: center;
-    padding: 0 20px;
 }
 
 .hero h1 {
     font-size: 48px;
-    font-weight: 700;
 }
 
 .hero p {
     margin-top: 15px;
-    font-size: 18px;
     opacity: 0.9;
 }
 
@@ -110,12 +100,10 @@ body {
 
 .search-container input {
     width: 350px;
-    max-width: 90%;
     padding: 14px;
     border-radius: 8px 0 0 8px;
     border: none;
     outline: none;
-    font-size: 14px;
 }
 
 .search-container button {
@@ -124,19 +112,7 @@ body {
     border-radius: 0 8px 8px 0;
     background: linear-gradient(45deg, #38bdf8, #6366f1);
     color: white;
-    font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.7);
-    transition: all 0.3s ease;
-}
-
-.search-container button:hover {
-    box-shadow: 0 0 25px rgba(99, 102, 241, 1);
-    transform: translateY(-2px);
-}
-
-.search-container button:active {
-    transform: scale(0.95);
 }
 
 /* ================= FEATURES ================= */
@@ -144,10 +120,9 @@ body {
 .features {
     display: flex;
     justify-content: space-around;
-    flex-wrap: wrap;
     padding: 80px 10%;
+    flex-wrap: wrap;
     gap: 30px;
-    text-align: center;
 }
 
 .feature {
@@ -156,16 +131,14 @@ body {
     border-radius: 15px;
     background: rgba(255, 255, 255, 0.08);
 
-    /* Safari Support */
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
 
-    transition: all 0.3s ease;
+    transition: 0.3s;
 }
 
 .feature:hover {
     transform: translateY(-8px);
-    background: rgba(56, 189, 248, 0.15);
 }
 
 .feature i {
@@ -182,17 +155,11 @@ body {
     padding: 60px 10%;
     text-align: center;
     flex-wrap: wrap;
-    gap: 20px;
 }
 
 .stat h2 {
     font-size: 40px;
     color: #38bdf8;
-}
-
-.stat p {
-    margin-top: 10px;
-    opacity: 0.8;
 }
 
 /* ================= RESULTS ================= */
@@ -205,23 +172,19 @@ body {
     gap: 30px;
 }
 
-/* ================= PAPER CARD ================= */
-
 .paper-card {
     background: rgba(255, 255, 255, 0.08);
     padding: 25px;
     border-radius: 15px;
 
-    /* Safari Support */
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
 
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: 0.3s;
 }
 
 .paper-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
 }
 
 .card-img {
@@ -232,34 +195,13 @@ body {
     margin-bottom: 15px;
 }
 
-.paper-card h3 {
-    margin-bottom: 10px;
-    color: #38bdf8;
-}
-
-.paper-card p {
-    font-size: 14px;
-    margin-bottom: 8px;
-}
-
-.abstract-preview {
-    opacity: 0.85;
-}
-
 .view-btn {
     margin-top: 15px;
     padding: 10px;
     border: none;
     border-radius: 6px;
     background: white;
-    color: black;
     cursor: pointer;
-    transition: 0.3s ease;
-}
-
-.view-btn:hover {
-    background: #38bdf8;
-    color: white;
 }
 
 /* ================= LOADER ================= */
@@ -268,7 +210,7 @@ body {
     margin: 20px auto;
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
+    border: 4px solid rgba(255,255,255,0.2);
     border-top: 4px solid #38bdf8;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -279,9 +221,7 @@ body {
 }
 
 @keyframes spin {
-    100% {
-        transform: rotate(360deg);
-    }
+    100% { transform: rotate(360deg); }
 }
 
 /* ================= FOOTER ================= */
@@ -289,67 +229,40 @@ body {
 .footer {
     text-align: center;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    font-size: 14px;
-    opacity: 0.8;
+    background: rgba(255,255,255,0.05);
 }
 
-/* ================= LIGHT MODE ================= */
+/* ================= FULL LIGHT MODE ================= */
 
 .light-mode {
-    background: #f8fafc;
-    color: #111;
+    background: #f1f5f9;
+    color: #111827;
 }
 
-.light-mode .navbar,
-.light-mode .footer {
-    background: rgba(0, 0, 0, 0.05);
+.light-mode .navbar {
+    background: rgba(255,255,255,0.8);
+}
+
+.light-mode .nav-links a {
+    color: #111827;
+}
+
+.light-mode .hero-overlay {
+    background: rgba(255,255,255,0.6);
+}
+
+.light-mode .search-container input {
+    background: white;
+    color: black;
 }
 
 .light-mode .feature,
 .light-mode .paper-card {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(255,255,255,0.8);
+    color: #111827;
 }
 
-.light-mode .nav-links a {
-    color: #111;
-}
-
-.light-mode .view-btn {
-    background: #111;
-    color: white;
-}
-
-/* ================= RESPONSIVE ================= */
-
-@media (max-width: 768px) {
-
-    .navbar {
-        flex-direction: column;
-        gap: 10px;
-        padding: 20px;
-    }
-
-    .hero h1 {
-        font-size: 30px;
-    }
-
-    .search-container {
-        flex-direction: column;
-    }
-
-    .search-container input {
-        border-radius: 8px;
-        margin-bottom: 10px;
-    }
-
-    .search-container button {
-        border-radius: 8px;
-    }
-
-    .features,
-    .stats {
-        flex-direction: column;
-        align-items: center;
-    }
+.light-mode .footer {
+    background: rgba(255,255,255,0.8);
+    color: #111827;
 }
