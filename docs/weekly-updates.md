@@ -1,3 +1,4 @@
 ## Week 1
-- Created GitHub repository
-- Set up project structure
+- Set up backend for ResearchLens
+- Implemented research paper search using arXiv API
+- Tested backend locally using browser
