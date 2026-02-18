@@ -1,22 +1,51 @@
+/* ================= GLOBAL ================= */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
 }
 
 body {
+    font-family: 'Poppins', sans-serif;
     background: #f5f7ff;
-    color: #111;
-    transition: 0.3s;
+    color: #111827;
+    transition: 0.3s ease;
 }
+
+/* ================= DARK MODE ================= */
+
+body.dark {
+    background: #0f172a;
+    color: white;
+}
+
+body.dark header {
+    background: #1e293b;
+}
+
+body.dark .feature-card,
+body.dark .paper-card {
+    background: #1e293b;
+    color: white;
+}
+
+body.dark .box {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+/* ================= HEADER ================= */
 
 header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 20px 60px;
     background: white;
     box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .logo {
@@ -38,13 +67,17 @@ nav {
     cursor: pointer;
     padding: 8px 14px;
     border-radius: 8px;
+    font-weight: 500;
     transition: 0.3s;
 }
 
-.nav-btn:hover {
+.nav-btn:hover,
+.nav-btn.active {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
 }
+
+/* ================= HERO ================= */
 
 .hero {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -53,8 +86,18 @@ nav {
     padding: 100px 20px;
 }
 
+.hero h1 {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
 .hero span {
     color: #ffe600;
+}
+
+.hero p {
+    font-size: 18px;
+    opacity: 0.9;
 }
 
 .search-box {
@@ -69,6 +112,7 @@ nav {
     width: 400px;
     border-radius: 12px;
     border: none;
+    outline: none;
 }
 
 .search-box button {
@@ -86,11 +130,14 @@ nav {
     transform: scale(1.05);
 }
 
+/* ================= FEATURES ================= */
+
 .features {
     display: flex;
     justify-content: center;
     gap: 30px;
     padding: 60px;
+    flex-wrap: wrap;
 }
 
 .feature-card {
@@ -114,10 +161,23 @@ nav {
     color: #6366f1;
 }
 
-.results-grid {
+/* ================= SECTIONS ================= */
+
+.section {
+    display: none;
     padding: 40px 60px;
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.section.active {
+    display: block;
+}
+
+/* ================= PAPER CARDS ================= */
+
+.results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
     gap: 20px;
 }
 
@@ -133,17 +193,46 @@ nav {
     transform: translateY(-6px);
 }
 
+.paper-card h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.paper-card p {
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.paper-card button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+}
+
+/* ================= QUOTE ================= */
+
 .quote-section {
     text-align: center;
     padding: 80px 20px;
     background: #eef2ff;
 }
 
+.quote-section h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+/* ================= BOXES ================= */
+
 .boxes {
     display: flex;
     justify-content: center;
     gap: 30px;
     padding: 60px;
+    flex-wrap: wrap;
 }
 
 .box {
@@ -159,15 +248,30 @@ nav {
     transform: scale(1.05);
 }
 
+/* ================= FOOTER ================= */
+
 footer {
     display: flex;
     justify-content: space-between;
     padding: 40px 60px;
     background: #111827;
     color: white;
+    flex-wrap: wrap;
 }
 
 .footer-right a {
     margin-left: 15px;
     color: white;
+    transition: 0.3s;
+}
+
+.footer-right a:hover {
+    color: #8b5cf6;
+}
+
+/* ================= ANIMATION ================= */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
