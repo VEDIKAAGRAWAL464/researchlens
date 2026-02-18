@@ -19,7 +19,9 @@ async function fetchArxivPapers(query, limit = 5) {
       citationCount: 0, // arXiv doesn't provide citation
       influentialCitationCount: 0,
       abstract: entry.summary?.[0]?.replace(/\s+/g, " ").trim(),
-      link: entry.id?.[0]
+      llink: entry.id?.[0],
+pdfUrl: entry.id?.[0]?.replace("abs", "pdf") + ".pdf"
+
     }));
 
     return papers;

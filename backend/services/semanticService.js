@@ -8,7 +8,7 @@ async function fetchSemanticPapers(query, limit = 5, apiKey) {
         params: {
           query: query,
           limit: limit,
-          fields: "title,authors,year,abstract,citationCount,influentialCitationCount,url"
+          fields: "title,authors,year,abstract,citationCount,influentialCitationCount,url,openAccessPdf"
         },
         headers: {
           "x-api-key": apiKey
@@ -24,7 +24,8 @@ async function fetchSemanticPapers(query, limit = 5, apiKey) {
       citationCount: paper.citationCount || 0,
       influentialCitationCount: paper.influentialCitationCount || 0,
       abstract: paper.abstract || "Abstract not available.",
-      link: paper.url
+      link: paper.url,
+      pdfUrl: paper.openAccessPdf?.url || null
     }));
 
     return papers;
