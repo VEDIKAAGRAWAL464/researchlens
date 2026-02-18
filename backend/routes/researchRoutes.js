@@ -1,3 +1,6 @@
+const { extractPdfText } = require("../services/pdfService");
+
+
 const express = require("express");
 const router = express.Router();
 
@@ -42,3 +45,27 @@ router.get("/research-search", async (req, res) => {
 });
 
 module.exports = router;
+
+router.get("/extract-pdf", async (req, res) => {
+  const pdfUrl = req.query.url;
+
+  if (!pdfUrl) {
+    return res.status(400).json({ error: "PDF URL required" });
+  }
+
+  try {
+    const text = await extractPdfText(pdfUrl);
+
+    if (!text) {
+      return res.status(500).json({ error: "Failed to extract text" });
+    }
+
+    res.json({
+      message: "PDF text extracted successfully",
+      preview: text.substring(0, 2000)
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: "PDF extraction failed" });
+  }
+});
