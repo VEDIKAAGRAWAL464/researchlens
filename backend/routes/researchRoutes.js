@@ -1,3 +1,4 @@
+const { extractSections } = require("../services/sectionService");
 const { extractPdfText } = require("../services/pdfService");
 
 
@@ -60,9 +61,11 @@ router.get("/extract-pdf", async (req, res) => {
       return res.status(500).json({ error: "Failed to extract text" });
     }
 
+    const sections = extractSections(text);
+
     res.json({
-      message: "PDF text extracted successfully",
-      preview: text.substring(0, 2000)
+    message: "PDF processed successfully",
+    sections: sections
     });
 
   } catch (error) {
