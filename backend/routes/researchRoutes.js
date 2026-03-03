@@ -1,3 +1,4 @@
+const { extractResearchInsights } = require("../services/llmService");
 const { extractSections } = require("../services/sectionService");
 const { extractPdfText } = require("../services/pdfService");
 
@@ -63,10 +64,12 @@ router.get("/extract-pdf", async (req, res) => {
 
     const sections = extractSections(text);
 
-    res.json({
-    message: "PDF processed successfully",
-    sections: sections
-    });
+    const insights = await extractResearchInsights(sections);
+
+res.json({
+  message: "Research insights extracted successfully",
+  insights: insights
+});
 
   } catch (error) {
     res.status(500).json({ error: "PDF extraction failed" });
