@@ -207,7 +207,26 @@ function triggerSearch(query) {
   performSearch();
 }
 
-function performSearch() {
+// ── Normalize backend response to frontend card format ────────
+function normalizePaper(paper) {
+  return {
+    paperId:       paper.paperId || paper.title,  // Semantic has paperId, arXiv doesn't
+    title:         paper.title        || "Untitled",
+    authors:       (paper.authors || []).map(a =>
+                     typeof a === "string" ? { name: a } : a
+                   ),                             // backend returns plain strings, card expects { name }
+    year:          paper.year         || "N/A",
+    abstract:      paper.abstract     || "Abstract not available.",
+    citationCount: paper.citationCount || 0,
+    url:           paper.link || paper.llink      || "#",  // llink is arXiv typo in backend
+    pdfUrl:        paper.pdfUrl        || null,
+    source:        paper.source        || "Unknown",
+    isOpenAccess:  paper.pdfUrl ? true : false,   // if PDF is available treat as open access
+    venue:         paper.source        || "",
+  };
+}
+
+async function performSearch() {
   if (!state.searchQuery) return;
   state.isLoading = true;
 
@@ -217,9 +236,16 @@ function performSearch() {
   // Save to history
   saveToHistory(state.searchQuery);
 
-  // Simulate API delay (replace with real fetch later)
-  setTimeout(() => {
-    const results = filterMockPapers(state.searchQuery);
+  try {
+    const response = await fetch(
+      `${CONFIG.BACKEND_URL}/research-search?q=${encodeURIComponent(state.searchQuery)}&limit=10`
+    );
+
+    if (!response.ok) throw new Error("Search request failed");
+
+    const rawPapers = await response.json();
+    const results = rawPapers.map(normalizePaper);
+
     state.searchTotal = results.length;
     state.isLoading = false;
 
@@ -231,18 +257,16 @@ function performSearch() {
       const page = results.slice(state.searchOffset, state.searchOffset + 10);
       showResults(page, results.length);
     }
-  }, 900);
+
+  } catch (error) {
+    console.error("Search error:", error.message);
+    state.isLoading = false;
+    hideSkeletons();
+    dom.errorState.style.display = 'block';
+    dom.errorMsg.textContent = "Search failed. Make sure the backend is running on port 5000.";
+  }
 }
 
-function filterMockPapers(query) {
-  const q = query.toLowerCase();
-  return MOCK_PAPERS.filter(p =>
-    p.title.toLowerCase().includes(q) ||
-    p.abstract?.toLowerCase().includes(q) ||
-    p.authors.some(a => a.name.toLowerCase().includes(q)) ||
-    p.venue?.toLowerCase().includes(q)
-  );
-}
 
 function showResultsView() {
   dom.welcomeState.style.display = 'none';
@@ -573,11 +597,45 @@ function openSummaryModal(paper) {
     </div>
   `;
 
-  // Simulate AI processing delay (replace with real API call later)
-  setTimeout(() => {
-    const summary = MOCK_SUMMARIES.default;
-    renderSummaryContent(paper, summary);
-  }, 1400);
+  // Call backend PDF extraction if pdfUrl exists
+  if (!paper.pdfUrl) {
+    // No PDF available — show abstract only with a note
+    setTimeout(() => {
+      renderSummaryContent(paper, {
+        summary: paper.abstract || "No summary available for this paper.",
+        keyPoints: ["Full text not available for this paper.", "Try searching for the paper directly on arXiv or Semantic Scholar."],
+        methodology: null,
+        limitations: null,
+      });
+    }, 400);
+    return;
+  }
+
+  fetch(`${CONFIG.BACKEND_URL}/extract-pdf?url=${encodeURIComponent(paper.pdfUrl)}`)
+    .then(res => {
+      if (!res.ok) throw new Error("PDF extraction failed");
+      return res.json();
+    })
+    .then(data => {
+      const sections = data.sections || {};
+      renderSummaryContent(paper, {
+        summary:      sections.abstract     || paper.abstract || "Summary not available.",
+        keyPoints:    sections.introduction
+                        ? [sections.introduction.substring(0, 300) + "..."]
+                        : ["Introduction section not found in this paper."],
+        methodology:  sections.methodology  || sections.experiments || null,
+        limitations:  sections.conclusion   || null,
+      });
+    })
+    .catch(error => {
+      console.error("PDF summary error:", error.message);
+      renderSummaryContent(paper, {
+        summary: paper.abstract || "Could not extract summary.",
+        keyPoints: ["PDF extraction failed. The paper may be restricted or unavailable."],
+        methodology: null,
+        limitations: null,
+      });
+    });
 }
 
 function renderSummaryContent(paper, summary) {
