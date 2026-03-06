@@ -1,7 +1,3 @@
-const { extractSections } = require("../services/sectionService");
-const { extractPdfText } = require("../services/pdfService");
-
-
 const express = require("express");
 const router = express.Router();
 
@@ -9,7 +5,11 @@ const { fetchArxivPapers } = require("../services/arxivService");
 const { fetchSemanticPapers } = require("../services/semanticService");
 const { rankPapers } = require("../services/rankingService");
 const { removeDuplicates } = require("../utils/duplicateChecker");
+const { extractSections } = require("../services/sectionService");
+const { extractPdfText } = require("../services/pdfService");
 
+
+// ── Route 1: Unified Paper Search ─────────────────────────────
 router.get("/research-search", async (req, res) => {
   const query = req.query.q;
   const limit = parseInt(req.query.limit) || 5;
@@ -19,7 +19,6 @@ router.get("/research-search", async (req, res) => {
   }
 
   try {
-    // Fetch from both sources
     const arxivPapers = await fetchArxivPapers(query, limit);
     const semanticPapers = await fetchSemanticPapers(
       query,
@@ -27,16 +26,10 @@ router.get("/research-search", async (req, res) => {
       process.env.SEMANTIC_API_KEY
     );
 
-    // Merge
     const combined = [...semanticPapers, ...arxivPapers];
-
-    // Remove duplicates
     const uniquePapers = removeDuplicates(combined);
-
-    // Rank papers
     const ranked = rankPapers(uniquePapers);
 
-    // Return top results
     res.json(ranked.slice(0, limit));
 
   } catch (error) {
@@ -45,8 +38,8 @@ router.get("/research-search", async (req, res) => {
   }
 });
 
-module.exports = router;
 
+// ── Route 2: PDF Extraction ────────────────────────────────────
 router.get("/extract-pdf", async (req, res) => {
   const pdfUrl = req.query.url;
 
@@ -64,11 +57,16 @@ router.get("/extract-pdf", async (req, res) => {
     const sections = extractSections(text);
 
     res.json({
-    message: "PDF processed successfully",
-    sections: sections
+      message: "PDF processed successfully",
+      sections: sections
     });
 
   } catch (error) {
+    console.error("PDF extraction error:", error.message);
     res.status(500).json({ error: "PDF extraction failed" });
   }
 });
+
+
+// ── Always last ────────────────────────────────────────────────
+module.exports = router;
