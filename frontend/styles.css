@@ -193,8 +193,8 @@ body {
   top: 0; left: 0; right: 0;
   z-index: 100;
   background: rgba(5,7,14,0.92);
-  backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
   border-bottom: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 4px 24px rgba(0,0,0,0.35);
   transition: background var(--transition-slow), box-shadow var(--transition-slow);
@@ -369,7 +369,7 @@ body {
   padding:0.5rem 1.25rem; border-radius:var(--radius-full);
   background:rgba(91,143,255,0.18); border:1px solid rgba(91,143,255,0.35);
   color:#93c5fd; font-size:0.8rem; font-weight:600; letter-spacing:0.02em;
-  margin-bottom:1.75rem; backdrop-filter:blur(12px);
+  margin-bottom:1.75rem; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
   text-shadow: none;
 }
 [data-theme="light"] .hero-badge {
@@ -437,6 +437,7 @@ body {
   border-radius:var(--radius-lg);
   padding:0.4rem 0.4rem 0.4rem 1.25rem;
   transition:border-color var(--transition), box-shadow var(--transition);
+  -webkit-backdrop-filter:blur(20px);
   backdrop-filter:blur(20px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
 }
@@ -481,7 +482,7 @@ body {
   background:var(--surface); border:1px solid var(--border-md);
   border-radius:var(--radius); overflow:hidden;
   box-shadow:var(--shadow-lg); z-index:50;
-  display:none; backdrop-filter:blur(20px);
+  display:none; -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
 }
 .suggestions.visible { display:block; }
 .suggestions-label {
@@ -510,7 +511,7 @@ body {
   padding:0.4rem 0.9rem; border-radius:var(--radius-full);
   background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14);
   font-size:0.78rem; font-weight:500; color:rgba(255,255,255,0.82);
-  backdrop-filter:blur(12px); transition:all var(--transition);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); transition:all var(--transition);
 }
 [data-theme="light"] .stat-pill {
   background:rgba(255,255,255,0.75);
@@ -672,7 +673,7 @@ body {
 
 .paper-abstract {
   font-size:0.85rem; color:var(--text-2); line-height:1.6;
-  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
 }
 
 .paper-footer {
@@ -697,7 +698,7 @@ body {
 /* ══════════════════════════════════════════════════
    WELCOME STATE — ACTION CARDS
 ══════════════════════════════════════════════════ */
-.welcome-state { }
+/* .welcome-state has no additional styles */
 
 .action-cards {
   display:grid;
@@ -856,7 +857,7 @@ body {
 ══════════════════════════════════════════════════ */
 .modal-overlay {
   position:fixed; inset:0;
-  background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);
+  background:rgba(0,0,0,0.75); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
   z-index:200; display:flex; align-items:center; justify-content:center;
   padding:1.5rem; opacity:0; pointer-events:none;
   transition:opacity var(--transition);
@@ -951,7 +952,6 @@ body {
 }
 
 /* Brand col */
-.footer-brand {}
 .footer-brand-logo {
   display:flex; align-items:center; gap:0.7rem;
   margin-bottom:1rem;
@@ -981,7 +981,6 @@ body {
 .social-btn:hover { color:var(--primary); border-color:rgba(91,143,255,0.4); background:var(--primary-soft); transform:translateY(-2px); box-shadow:0 4px 12px rgba(91,143,255,0.2); }
 
 /* Footer columns */
-.footer-col {}
 .footer-col-title {
   font-size:0.75rem; font-weight:800;
   text-transform:uppercase; letter-spacing:0.12em;
