@@ -5,11 +5,27 @@ const cors = require("cors");
 const researchRoutes = require("./routes/researchRoutes");
 
 const app = express();
-app.use(cors());
+
+// ── CORS ───────────────────────────────────────────────────────
+app.use(cors({
+  origin: "http://127.0.0.1:5500",  // VS Code Live Server frontend URL
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
+// ── Middleware ─────────────────────────────────────────────────
 app.use(express.json());
 
+// ── Routes ─────────────────────────────────────────────────────
 app.use("/api", researchRoutes);
 
-app.listen(5000, () => {
-  console.log("ResearchLens backend running on port 5000");
+// ── Health Check ───────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "ResearchLens API is running" });
+});
+
+// ── Start Server ───────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`ResearchLens backend running on port ${PORT}`);
 });
