@@ -163,6 +163,7 @@ dom.themeToggle.addEventListener('click', () => {
 // ══════════════════════════════════════════════════
 function showPage(page) {
   // Hide all pages
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link, .mobile-link').forEach(l => l.classList.remove('active'));
 
