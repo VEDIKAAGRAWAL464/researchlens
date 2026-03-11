@@ -7,6 +7,7 @@ const { rankPapers } = require("../services/rankingService");
 const { removeDuplicates } = require("../utils/duplicateChecker");
 const { extractSections } = require("../services/sectionService");
 const { extractPdfText } = require("../services/pdfService");
+const { extractResearchInsights } = require("../services/llmService");
 
 
 // ── Route 1: Unified Paper Search ─────────────────────────────
@@ -56,7 +57,30 @@ router.get("/extract-pdf", async (req, res) => {
 
     const sections = extractSections(text);
 
+    // Generate structured AI insights via local LLM
+    const insights = await extractResearchInsights(sections);
 
+    // Build a readable summary string from the insights object
+    let summary = "AI analysis could not be generated.";
+    if (insights && typeof insights === "object") {
+      const obj = insights["Research Objective"] || insights["Proposed Method"] || "";
+      if (obj && obj !== "Not specified") {
+        summary = obj;
+      } else if (sections.abstract) {
+        summary = sections.abstract.slice(0, 300);
+      }
+    } else if (typeof insights === "string") {
+      summary = insights;
+    }
+
+    res.json({
+      summary: summary,
+      insights: typeof insights === "object" ? insights : {},
+      sections: {
+        abstract: sections.abstract || null,
+        introduction: sections.introduction || null
+      }
+    });
 
   } catch (error) {
     console.error("PDF extraction error:", error.message);
@@ -64,6 +88,45 @@ router.get("/extract-pdf", async (req, res) => {
   }
 });
 
+
+
+
+// ── Route 3: Summarize from Abstract (no PDF needed) ──────────
+router.post("/summarize-abstract", async (req, res) => {
+  const { abstract, title } = req.body;
+
+  if (!abstract) {
+    return res.status(400).json({ error: "Abstract text required" });
+  }
+
+  try {
+    const sections = {
+      abstract: abstract,
+      introduction: title ? `This paper is titled: ${title}` : ""
+    };
+
+    const insights = await extractResearchInsights(sections);
+
+    let summary = "AI analysis could not be generated.";
+    if (insights && typeof insights === "object") {
+      const obj = insights["Research Objective"] || insights["Proposed Method"] || "";
+      if (obj && obj !== "Not specified") {
+        summary = obj;
+      } else {
+        summary = abstract.slice(0, 300);
+      }
+    }
+
+    res.json({
+      summary: summary,
+      insights: typeof insights === "object" ? insights : {}
+    });
+
+  } catch (error) {
+    console.error("Abstract summarize error:", error.message);
+    res.status(500).json({ error: "Summary generation failed" });
+  }
+});
 
 // ── Always last ────────────────────────────────────────────────
 module.exports = router;
