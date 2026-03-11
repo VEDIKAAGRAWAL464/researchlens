@@ -210,19 +210,27 @@ function triggerSearch(query) {
 
 // ── Normalize backend response to frontend card format ────────
 function normalizePaper(paper) {
+  // Derive PDF URL from arXiv link if pdfUrl is missing
+  let pdfUrl = paper.pdfUrl || null;
+  if (!pdfUrl) {
+    const link = paper.link || paper.llink || "";
+    if (link.includes("arxiv.org/abs/")) {
+      pdfUrl = link.replace("arxiv.org/abs/", "arxiv.org/pdf/") + ".pdf";
+    }
+  }
   return {
-    paperId:       paper.paperId || paper.title,  // Semantic has paperId, arXiv doesn't
+    paperId:       paper.paperId || paper.title,
     title:         paper.title        || "Untitled",
     authors:       (paper.authors || []).map(a =>
                      typeof a === "string" ? { name: a } : a
-                   ),                             // backend returns plain strings, card expects { name }
+                   ),
     year:          paper.year         || "N/A",
     abstract:      paper.abstract     || "Abstract not available.",
     citationCount: paper.citationCount || 0,
-    url:           paper.link || paper.llink      || "#",  // llink is arXiv typo in backend
-    pdfUrl:        paper.pdfUrl        || null,
+    url:           paper.link || paper.llink      || "#",
+    pdfUrl:        pdfUrl,
     source:        paper.source        || "Unknown",
-    isOpenAccess:  paper.pdfUrl ? true : false,   // if PDF is available treat as open access
+    isOpenAccess:  pdfUrl ? true : false,
     venue:         paper.source        || "",
   };
 }
@@ -581,11 +589,11 @@ function renderHistory() {
 // AI SUMMARY MODAL
 // ══════════════════════════════════════════════════
 function openSummaryModal(paper) {
+
   dom.modalTitle.textContent = paper.title;
   dom.modalOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Show loading state
   dom.modalBody.innerHTML = `
     <div class="modal-loading">
       <div class="modal-loading-text">
@@ -598,48 +606,64 @@ function openSummaryModal(paper) {
     </div>
   `;
 
-  // Call backend PDF extraction if pdfUrl exists
-  if (!paper.pdfUrl) {
-    // No PDF available — show abstract only with a note
-    setTimeout(() => {
-      renderSummaryContent(paper, {
-        summary: paper.abstract || "No summary available for this paper.",
-        keyPoints: ["Full text not available for this paper.", "Try searching for the paper directly on arXiv or Semantic Scholar."],
-        methodology: null,
-        limitations: null,
-      });
-    }, 400);
-    return;
-  }
-
-  fetch(`${CONFIG.BACKEND_URL}/extract-pdf?url=${encodeURIComponent(paper.pdfUrl)}`)
+  // POST abstract to backend — avoids URL length limits for long abstracts
+  fetch(`${CONFIG.BACKEND_URL}/summarize-abstract`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ abstract: paper.abstract, title: paper.title })
+  })
     .then(res => {
-      if (!res.ok) throw new Error("PDF extraction failed");
+      if (!res.ok) throw new Error("Summary request failed");
       return res.json();
     })
     .then(data => {
-      const sections = data.sections || {};
-      renderSummaryContent(paper, {
-        summary:      sections.abstract     || paper.abstract || "Summary not available.",
-        keyPoints:    sections.introduction
-                        ? [sections.introduction.substring(0, 300) + "..."]
-                        : ["Introduction section not found in this paper."],
-        methodology:  sections.methodology  || sections.experiments || null,
-        limitations:  sections.conclusion   || null,
-      });
+      const insights = data.insights || {};
+
+      // Build a rich multi-sentence summary from multiple fields instead of just one field
+      const parts = [];
+      const obj = insights["Research Objective"];
+      const gap = insights["Problem Gap"];
+      const method = insights["Proposed Method"];
+      const results = insights["Key Results"];
+
+      if (obj && obj !== "Not specified") parts.push(obj);
+      if (gap && gap !== "Not specified" && gap !== obj) parts.push(gap);
+      if (method && method !== "Not specified" && method !== obj) parts.push(method);
+      if (results && results !== "Not specified" && results !== obj) parts.push(results);
+
+      const richSummary = parts.join(" ") || data.summary || "AI summary could not be generated.";
+
+      renderSummaryContent(paper, insights, richSummary);
     })
     .catch(error => {
-      console.error("PDF summary error:", error.message);
-      renderSummaryContent(paper, {
-        summary: paper.abstract || "Could not extract summary.",
-        keyPoints: ["PDF extraction failed. The paper may be restricted or unavailable."],
-        methodology: null,
-        limitations: null,
-      });
+      console.error("Summary error:", error.message);
+      renderSummaryContent(paper, {}, "");
     });
 }
 
-function renderSummaryContent(paper, summary) {
+function renderSummaryContent(paper, insights, summaryText) {
+  const val = (key) => {
+    const v = insights[key];
+    return (v && v !== "Not specified" && v.trim() !== "") ? v : null;
+  };
+
+  const confidence = insights["Insight Confidence"] || null;
+  const confidenceColor = confidence === "High" ? "#4ade80" : confidence === "Medium" ? "#facc15" : "#f87171";
+
+  // Research Objective is already shown in AI Summary — skip it here to avoid repetition
+  const fields = [
+    { label: "Problem / Gap", icon: "❓", key: "Problem Gap" },
+    { label: "Proposed Method", icon: "⚙️", key: "Proposed Method" },
+    { label: "Dataset Used", icon: "🗄️", key: "Dataset Used" },
+    { label: "Evaluation Metrics", icon: "📏", key: "Evaluation Metrics" },
+    { label: "Key Results", icon: "📊", key: "Key Results" },
+    { label: "Strengths", icon: "💪", key: "Strengths" },
+    { label: "Limitations", icon: "⚠️", key: "Limitations" },
+    { label: "Future Work", icon: "🔭", key: "Future Work" },
+  ];
+
+  const filledFields = fields.filter(f => val(f.key));
+
   dom.modalBody.innerHTML = `
     ${paper.abstract ? `
       <div class="modal-section">
@@ -652,49 +676,35 @@ function renderSummaryContent(paper, summary) {
     ` : ''}
 
     <div class="modal-section">
-      <div class="modal-section-title">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-        AI Summary
+      <div class="modal-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          AI Summary
+        </span>
+        ${confidence ? `<span style="font-size:11px; font-weight:600; color:${confidenceColor}; background:${confidenceColor}22; padding:2px 8px; border-radius:10px; letter-spacing:0.5px;">● ${confidence} Confidence</span>` : ''}
       </div>
-      <div class="modal-summary">${summary.summary}</div>
+      <div class="modal-summary">${summaryText || val("Research Objective") || "AI summary could not be generated."}</div>
     </div>
 
+    ${filledFields.length > 0 ? `
     <div class="modal-section">
       <div class="modal-section-title">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Key Points
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Structured Insights
       </div>
-      <ul class="modal-keypoints">
-        ${summary.keyPoints.map((point, i) => `
-          <li class="modal-keypoint" style="animation-delay:${i * 0.1}s">
-            <span class="modal-keypoint-num">${i + 1}</span>
-            <span>${point}</span>
-          </li>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+        ${filledFields.map(f => `
+          <div style="background:var(--card-bg, rgba(255,255,255,0.04)); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.8px; opacity:0.55; margin-bottom:5px; text-transform:uppercase;">${f.icon} ${f.label}</div>
+            <div style="font-size:14px; line-height:1.5;">${val(f.key)}</div>
+          </div>
         `).join('')}
-      </ul>
+      </div>
     </div>
-
-    ${summary.methodology ? `
-      <div class="modal-section">
-        <div class="modal-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
-          Methodology
-        </div>
-        <div class="modal-info-box">${summary.methodology}</div>
-      </div>
-    ` : ''}
-
-    ${summary.limitations ? `
-      <div class="modal-section">
-        <div class="modal-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Limitations
-        </div>
-        <div class="modal-info-box">${summary.limitations}</div>
-      </div>
-    ` : ''}
+    ` : '<div class="modal-section"><div style="opacity:0.5; font-size:13px;">No structured insights could be extracted.</div></div>'}
   `;
 }
+
 
 function closeModal() {
   dom.modalOverlay.classList.remove('active');
