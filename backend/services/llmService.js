@@ -12,9 +12,10 @@ async function getAvailableModel() {
   }
 }
 
+// ===================== INSIGHT EXTRACTION =====================
+
 async function extractResearchInsights(sections) {
   try {
-    // Keep abstract SHORT so model is fast
     const abstract = sections.abstract
       ? sections.abstract.slice(0, 500)
       : "No abstract provided.";
@@ -39,8 +40,6 @@ Return only this JSON, no other text:
   "Future Work": "..."
 }`;
 
-    console.log("Calling Ollama...");
-
     const response = await axios.post(
       "http://localhost:11434/api/generate",
       {
@@ -52,11 +51,11 @@ Return only this JSON, no other text:
           num_predict: 800
         }
       },
-      { timeout: 120000 } // 2 minutes max
+      { timeout: 120000 }
     );
 
     const rawOutput = response.data.response.trim();
-    console.log("Ollama responded:", rawOutput.slice(0, 300));
+    console.log("Ollama responded (insights):", rawOutput.slice(0, 200));
 
     const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -67,12 +66,10 @@ Return only this JSON, no other text:
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      // Try closing truncated JSON
       try { parsed = JSON.parse(jsonMatch[0] + '"}'); }
       catch { return { "Research Objective": rawOutput.slice(0, 250) }; }
     }
 
-    // Confidence score
     const missing = Object.values(parsed).filter(v => !v || v === "Not specified" || v.trim() === "").length;
     parsed["Insight Confidence"] = missing > 4 ? "Low" : missing >= 2 ? "Medium" : "High";
 
@@ -84,4 +81,59 @@ Return only this JSON, no other text:
   }
 }
 
-module.exports = { extractResearchInsights };
+// ===================== SUMMARY GENERATION =====================
+
+async function generateSummary(sections) {
+  try {
+    const text =
+      (sections.abstract || "") +
+      "\n" +
+      (sections.introduction ? sections.introduction.slice(0, 1000) : "");
+
+    if (!text || text.trim().length < 50) {
+      return "Summary not available.";
+    }
+
+    const model = await getAvailableModel();
+    console.log("Using model for summary:", model);
+
+    const prompt = `Summarize the following research paper in 3 concise sentences.
+Focus on:
+- main objective
+- method used
+- key contribution
+
+Do not copy text directly.
+
+Text:
+${text}`;
+
+    const response = await axios.post(
+      "http://localhost:11434/api/generate",
+      {
+        model: model,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.3,
+          num_predict: 200
+        }
+      },
+      { timeout: 60000 }
+    );
+
+    const summary = response.data.response.trim();
+    console.log("Summary generated:", summary);
+
+    return summary;
+
+  } catch (error) {
+    console.error("Summary error:", error.message);
+    return "Summary generation failed.";
+  }
+}
+
+module.exports = {
+  extractResearchInsights,
+  generateSummary
+};
