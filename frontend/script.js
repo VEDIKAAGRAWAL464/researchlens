@@ -15,6 +15,7 @@ const state = {
   searchHistory: JSON.parse(localStorage.getItem('searchHistory') || '[]'),
   isLoading: false,
   theme: localStorage.getItem('theme') || 'dark',
+  paidPlatforms: [],
 };
 
 // ── Mock paper data (will be replaced by real API) ─
@@ -230,7 +231,9 @@ function normalizePaper(paper) {
     url:           paper.link || paper.llink      || "#",
     pdfUrl:        pdfUrl,
     source:        paper.source        || "Unknown",
-    isOpenAccess:  pdfUrl ? true : false,
+    isOpenAccess: pdfUrl ? true :
+                  paper.source === "arXiv" ? true :
+                  paper.source === "CORE" ? true : false,
     venue:         paper.source        || "",
   };
 }
@@ -252,9 +255,12 @@ async function performSearch() {
 
     if (!response.ok) throw new Error("Search request failed");
 
-    const data = await response.json();
-const rawPapers = data.papers || data; // handles both new and old format
-const results = rawPapers.map(normalizePaper);
+     const data = await response.json();
+    const rawPapers = data.papers || data;
+    const results = rawPapers.map(normalizePaper);
+
+    // Store paid platforms for display
+    state.paidPlatforms = data.paidPlatforms || [];
 
     state.searchTotal = results.length;
     state.isLoading = false;
@@ -266,6 +272,7 @@ const results = rawPapers.map(normalizePaper);
     } else {
       const page = results.slice(state.searchOffset, state.searchOffset + 10);
       showResults(page, results.length);
+      showPaidPlatforms(state.paidPlatforms);
     }
 
   } catch (error) {
@@ -294,6 +301,76 @@ function showSkeletons() {
 
 function hideSkeletons() {
   dom.skeletons.style.display = 'none';
+}
+
+function showPaidPlatforms(platforms) {
+  // Remove existing section if any
+  const existing = document.getElementById('paidPlatformsSection');
+  if (existing) existing.remove();
+
+  if (!platforms || platforms.length === 0) return;
+
+  const section = document.createElement('div');
+  section.id = 'paidPlatformsSection';
+  section.style.cssText = `
+    margin: 32px 0 16px 0;
+    padding: 20px 24px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  `;
+
+  section.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <span style="font-size:13px; font-weight:700; color:#374151; letter-spacing:0.5px;">
+        🔒 ALSO SEARCH ON PAID PLATFORMS
+      </span>
+      <span style="margin-left:8px; font-size:11px; color:#9ca3af;">
+        These platforms may have additional papers — click to visit
+      </span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+      ${platforms.map(p => `
+        <a href="${p.searchUrl}" target="_blank" rel="noopener noreferrer"
+          style="
+            display:inline-flex; align-items:center; gap:8px;
+            padding:8px 14px;
+            border-radius:20px;
+            border:1.5px solid ${p.color}33;
+            background:${p.color}11;
+            color:${p.color};
+            font-size:12px; font-weight:600;
+            text-decoration:none;
+            transition:all 0.2s;
+          "
+          onmouseover="this.style.background='${p.color}22'"
+          onmouseout="this.style.background='${p.color}11'"
+        >
+          <span style="
+            background:${p.color};
+            color:#fff;
+            font-size:10px;
+            font-weight:700;
+            padding:2px 6px;
+            border-radius:6px;
+            letter-spacing:0.3px;
+          ">${p.logo}</span>
+          ${p.name}
+          <span style="
+            font-size:10px;
+            background:#f3f4f6;
+            color:#6b7280;
+            padding:1px 6px;
+            border-radius:10px;
+          ">Paid</span>
+        </a>
+      `).join('')}
+    </div>
+  `;
+
+  // Insert after the papers grid
+  dom.papersGrid.after(section);
 }
 
 function showResults(papers, total) {
@@ -623,17 +700,7 @@ function openSummaryModal(paper) {
 
       // Build a rich multi-sentence summary from multiple fields instead of just one field
       const parts = [];
-      const obj = insights["Research Objective"];
-      const gap = insights["Problem Gap"];
-      const method = insights["Proposed Method"];
-      const results = insights["Key Results"];
-
-      if (obj && obj !== "Not specified") parts.push(obj);
-      if (gap && gap !== "Not specified" && gap !== obj) parts.push(gap);
-      if (method && method !== "Not specified" && method !== obj) parts.push(method);
-      if (results && results !== "Not specified" && results !== obj) parts.push(results);
-
-      const richSummary = parts.join(" ") || data.summary || "AI summary could not be generated.";
+      const richSummary = data.summary || "AI summary could not be generated.";
 
       renderSummaryContent(paper, insights, richSummary);
     })
