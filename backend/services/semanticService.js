@@ -2,6 +2,11 @@ const axios = require("axios");
 
 async function fetchSemanticPapers(query, limit = 5, apiKey) {
   try {
+    const headers = {
+      "User-Agent": "ResearchLens/1.0 (research tool)",
+    };
+    if (apiKey) headers["x-api-key"] = apiKey;
+
     const response = await axios.get(
       "https://api.semanticscholar.org/graph/v1/paper/search",
       {
@@ -10,13 +15,12 @@ async function fetchSemanticPapers(query, limit = 5, apiKey) {
           limit: limit,
           fields: "title,authors,year,abstract,citationCount,influentialCitationCount,url,openAccessPdf"
         },
-        headers: {
-          "x-api-key": apiKey
-        }
+        headers,
+        timeout: 10000,
       }
     );
 
-    const papers = response.data.data.map(paper => ({
+    return response.data.data.map(paper => ({
       source: "Semantic Scholar",
       title: paper.title,
       authors: paper.authors.map(a => a.name),
@@ -28,10 +32,16 @@ async function fetchSemanticPapers(query, limit = 5, apiKey) {
       pdfUrl: paper.openAccessPdf?.url || null
     }));
 
-    return papers;
-
   } catch (error) {
-    console.error("Error fetching Semantic Scholar:", error.response?.data || error.message);
+    if (error.response?.status === 429) {
+      console.warn("[Semantic Scholar] Rate limited — skipping.");
+      return [];
+    }
+    if (error.response?.status === 403) {
+      console.warn("[Semantic Scholar] Forbidden — skipping.");
+      return [];
+    }
+    console.error("[Semantic Scholar] Error:", error.response?.data || error.message);
     return [];
   }
 }

@@ -252,8 +252,9 @@ async function performSearch() {
 
     if (!response.ok) throw new Error("Search request failed");
 
-    const rawPapers = await response.json();
-    const results = rawPapers.map(normalizePaper);
+    const data = await response.json();
+const rawPapers = data.papers || data; // handles both new and old format
+const results = rawPapers.map(normalizePaper);
 
     state.searchTotal = results.length;
     state.isLoading = false;
@@ -432,6 +433,7 @@ function createPaperCard(paper, variant = 'search') {
       </div>
     </div>
 
+    <span style="display:inline-block; margin-bottom:8px; padding:2px 10px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; background:#e0e7ff; color:#4338ca;">${paper.source || 'Unknown'}</span>
     <h3 class="paper-title">${paper.title}</h3>
 
     <div class="paper-authors">
@@ -648,18 +650,16 @@ function renderSummaryContent(paper, insights, summaryText) {
   };
 
   const confidence = insights["Insight Confidence"] || null;
-  const confidenceColor = confidence === "High" ? "#4ade80" : confidence === "Medium" ? "#facc15" : "#f87171";
+  const isFallback = confidence && confidence.includes("Low");
+  const confidenceColor = isFallback ? "#f87171" : (confidence === "High" ? "#4ade80" : "#facc15");
 
-  // Research Objective is already shown in AI Summary — skip it here to avoid repetition
+  // Aligned with Project Report mandatory sections
   const fields = [
-    { label: "Problem / Gap", icon: "❓", key: "Problem Gap" },
-    { label: "Proposed Method", icon: "⚙️", key: "Proposed Method" },
-    { label: "Dataset Used", icon: "🗄️", key: "Dataset Used" },
-    { label: "Evaluation Metrics", icon: "📏", key: "Evaluation Metrics" },
-    { label: "Key Results", icon: "📊", key: "Key Results" },
-    { label: "Strengths", icon: "💪", key: "Strengths" },
+    { label: "Problem Statement", icon: "❓", key: "Problem Statement" },
+    { label: "Methodology", icon: "⚙️", key: "Methodology" },
+    { label: "Contributions", icon: "💎", key: "Contributions" },
+    { label: "Results", icon: "📊", key: "Results" },
     { label: "Limitations", icon: "⚠️", key: "Limitations" },
-    { label: "Future Work", icon: "🔭", key: "Future Work" },
   ];
 
   const filledFields = fields.filter(f => val(f.key));
@@ -683,7 +683,7 @@ function renderSummaryContent(paper, insights, summaryText) {
         </span>
         ${confidence ? `<span style="font-size:11px; font-weight:600; color:${confidenceColor}; background:${confidenceColor}22; padding:2px 8px; border-radius:10px; letter-spacing:0.5px;">● ${confidence} Confidence</span>` : ''}
       </div>
-      <div class="modal-summary">${summaryText || val("Research Objective") || "AI summary could not be generated."}</div>
+      <div class="modal-summary">${summaryText || val("Problem Statement") || "AI summary could not be generated."}</div>
     </div>
 
     ${filledFields.length > 0 ? `
