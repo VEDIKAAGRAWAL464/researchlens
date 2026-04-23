@@ -16,6 +16,7 @@ const state = {
   isLoading: false,
   theme: localStorage.getItem('theme') || 'dark',
   paidPlatforms: [],
+  paidPapers: [],
 };
 
 // ── Mock paper data (will be replaced by real API) ─
@@ -164,7 +165,7 @@ dom.themeToggle.addEventListener('click', () => {
 // ══════════════════════════════════════════════════
 function showPage(page) {
   // Hide all pages
-  
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link, .mobile-link').forEach(l => l.classList.remove('active'));
 
@@ -220,21 +221,21 @@ function normalizePaper(paper) {
     }
   }
   return {
-    paperId:       paper.paperId || paper.title,
-    title:         paper.title        || "Untitled",
-    authors:       (paper.authors || []).map(a =>
-                     typeof a === "string" ? { name: a } : a
-                   ),
-    year:          paper.year         || "N/A",
-    abstract:      paper.abstract     || "Abstract not available.",
+    paperId: paper.paperId || paper.title,
+    title: paper.title || "Untitled",
+    authors: (paper.authors || []).map(a =>
+      typeof a === "string" ? { name: a } : a
+    ),
+    year: paper.year || "N/A",
+    abstract: paper.abstract || "Abstract not available.",
     citationCount: paper.citationCount || 0,
-    url:           paper.link || paper.llink      || "#",
-    pdfUrl:        pdfUrl,
-    source:        paper.source        || "Unknown",
+    url: paper.link || paper.llink || "#",
+    pdfUrl: pdfUrl,
+    source: paper.source || "Unknown",
     isOpenAccess: pdfUrl ? true :
-                  paper.source === "arXiv" ? true :
-                  paper.source === "CORE" ? true : false,
-    venue:         paper.source        || "",
+      paper.source === "arXiv" ? true :
+        paper.source === "CORE" ? true : false,
+    venue: paper.source || "",
   };
 }
 
@@ -255,12 +256,13 @@ async function performSearch() {
 
     if (!response.ok) throw new Error("Search request failed");
 
-     const data = await response.json();
+    const data = await response.json();
     const rawPapers = data.papers || data;
     const results = rawPapers.map(normalizePaper);
 
     // Store paid platforms for display
     state.paidPlatforms = data.paidPlatforms || [];
+    state.paidPapers = data.paidPapers || [];
 
     state.searchTotal = results.length;
     state.isLoading = false;
@@ -273,6 +275,9 @@ async function performSearch() {
       const page = results.slice(state.searchOffset, state.searchOffset + 10);
       showResults(page, results.length);
       showPaidPlatforms(state.paidPlatforms);
+      if (state.paidPapers.length > 0) {
+        showPaidPaperCards(state.paidPapers);
+      }
     }
 
   } catch (error) {
@@ -283,7 +288,6 @@ async function performSearch() {
     dom.errorMsg.textContent = "Search failed. Make sure the backend is running on port 5000.";
   }
 }
-
 
 function showResultsView() {
   dom.welcomeState.style.display = 'none';
@@ -304,72 +308,50 @@ function hideSkeletons() {
 }
 
 function showPaidPlatforms(platforms) {
-  // Remove existing section if any
+  // Kept minimal — just shows a small footer note
   const existing = document.getElementById('paidPlatformsSection');
   if (existing) existing.remove();
+}
 
-  if (!platforms || platforms.length === 0) return;
+function showPaidPaperCards(paidPapers) {
+  const existing = document.getElementById('paidPapersSection');
+  if (existing) existing.remove();
+  if (!paidPapers || paidPapers.length === 0) return;
 
   const section = document.createElement('div');
-  section.id = 'paidPlatformsSection';
-  section.style.cssText = `
-    margin: 32px 0 16px 0;
-    padding: 20px 24px;
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  `;
+  section.id = 'paidPapersSection';
+  section.style.cssText = 'margin-top: 32px;';
 
-  section.innerHTML = `
-    <div style="margin-bottom:14px;">
-      <span style="font-size:13px; font-weight:700; color:#374151; letter-spacing:0.5px;">
-        🔒 ALSO SEARCH ON PAID PLATFORMS
-      </span>
-      <span style="margin-left:8px; font-size:11px; color:#9ca3af;">
-        These platforms may have additional papers — click to visit
-      </span>
-    </div>
-    <div style="display:flex; flex-wrap:wrap; gap:10px;">
-      ${platforms.map(p => `
-        <a href="${p.searchUrl}" target="_blank" rel="noopener noreferrer"
-          style="
-            display:inline-flex; align-items:center; gap:8px;
-            padding:8px 14px;
-            border-radius:20px;
-            border:1.5px solid ${p.color}33;
-            background:${p.color}11;
-            color:${p.color};
-            font-size:12px; font-weight:600;
-            text-decoration:none;
-            transition:all 0.2s;
-          "
-          onmouseover="this.style.background='${p.color}22'"
-          onmouseout="this.style.background='${p.color}11'"
-        >
-          <span style="
-            background:${p.color};
-            color:#fff;
-            font-size:10px;
-            font-weight:700;
-            padding:2px 6px;
-            border-radius:6px;
-            letter-spacing:0.3px;
-          ">${p.logo}</span>
-          ${p.name}
-          <span style="
-            font-size:10px;
-            background:#f3f4f6;
-            color:#6b7280;
-            padding:1px 6px;
-            border-radius:10px;
-          ">Paid</span>
-        </a>
-      `).join('')}
-    </div>
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:16px;';
+  header.innerHTML = `
+    <span style="font-size:13px; font-weight:700; color:#374151; letter-spacing:0.5px;">
+      🔒 PAPERS FROM PAID PLATFORMS
+    </span>
+    <span style="font-size:11px; color:#9ca3af;">
+      Available via publisher — click card to access
+    </span>
   `;
+  section.appendChild(header);
 
-  // Insert after the papers grid
+  const grid = document.createElement('div');
+  grid.className = 'papers-grid';
+  paidPapers.forEach((paper, i) => {
+    const card = createPaperCard(paper);
+    card.style.animationDelay = `${i * 0.06}s`;
+    card.style.animation = 'fadeUp 0.4s ease forwards';
+    card.style.opacity = '0';
+    // Make the whole card clickable to the paper URL
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      if (!e.target.closest('button') && paper.url) {
+        window.open(paper.url, '_blank', 'noopener,noreferrer');
+      }
+    });
+    grid.appendChild(card);
+  });
+
+  section.appendChild(grid);
   dom.papersGrid.after(section);
 }
 
@@ -485,10 +467,17 @@ function createPaperCard(paper, variant = 'search') {
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           ${paper.year}
         </span>` : ''}
-        ${paper.isOpenAccess ? `<span class="tag tag-open">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Open Access
-        </span>` : ''}
+        ${paper.accessType === 'paid'
+      ? `<span class="tag" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">
+      🔒 Paid
+    </span>`
+      : paper.isOpenAccess
+        ? `<span class="tag tag-open">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Open Access
+    </span>`
+        : ''
+      }
       </div>
       <div class="paper-actions">
         ${variant === 'search' ? `
@@ -650,7 +639,7 @@ function renderHistory() {
         </div>
       </div>
       <button class="history-search-btn">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
         Search again
       </button>
     `;
@@ -771,7 +760,6 @@ function renderSummaryContent(paper, insights, summaryText) {
     ` : '<div class="modal-section"><div style="opacity:0.5; font-size:13px;">No structured insights could be extracted.</div></div>'}
   `;
 }
-
 
 function closeModal() {
   dom.modalOverlay.classList.remove('active');

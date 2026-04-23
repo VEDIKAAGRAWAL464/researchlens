@@ -12,7 +12,7 @@ const { extractSections } = require("../services/sectionService");
 const { extractPdfText } = require("../services/pdfService");
 const { getConsolidatedAnalysis } = require("../services/llmService");
 const { enrichPaperBatch } = require("../services/dataEnricher");
-const { getPaidPlatformLinks } = require("../services/paidSourcesService");
+const { getPaidPlatformLinks, fetchPaidPapers } = require("../services/paidSourcesService");
 
 // Simple in-memory cache — stores results for 10 minutes
 const searchCache = new Map();
@@ -56,6 +56,7 @@ const perSource = 4; // fetch from each source independently
     if (sources.includes("crossref")) tasks.push(fetchCrossrefPapers(query, perSource));
     if (sources.includes("pubmed"))   tasks.push(fetchPubmedPapers(query, perSource));
     if (sources.includes("core"))     tasks.push(fetchCorePapers(query, perSource));
+    const paidPapersPromise = fetchPaidPapers(query, 6);
     const results = await Promise.allSettled(tasks);
 
     const allPapers = results
@@ -66,11 +67,14 @@ const perSource = 4; // fetch from each source independently
     const enriched = await enrichPaperBatch(unique);
     const ranked = rankPapers(enriched);
 
-    const responseData = {
-      papers: ranked,
-      paidPlatforms: getPaidPlatformLinks(query),
-      meta: { query, totalFound: ranked.length, sourcesQueried: sources },
-    };
+   const paidPapers = await paidPapersPromise.catch(() => []);
+
+const responseData = {
+  papers: ranked,
+  paidPapers: paidPapers,
+  paidPlatforms: getPaidPlatformLinks(query),
+  meta: { query, totalFound: ranked.length, sourcesQueried: sources },
+};
     setCache(cacheKey, responseData);
     res.json(responseData);
 

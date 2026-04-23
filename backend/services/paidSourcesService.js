@@ -1,7 +1,7 @@
 // Paid Sources Service
 // Generates search links for paid platforms — no API calls, no cost.
 // Just shows users the paper may exist there with a "Visit" button.
-
+const axios = require("axios");
 const PAID_PLATFORMS = [
   {
     id: "ieee",
@@ -78,4 +78,80 @@ function getPaidPlatformLinks(query, doi = null) {
   }));
 }
 
-module.exports = { getPaidPlatformLinks, PAID_PLATFORMS };
+async function fetchPaidPapers(query, limit = 6) {
+  try {
+    const response = await axios.get("https://api.crossref.org/works", {
+      params: {
+        query: query,
+        rows: limit * 3, // fetch more so we can filter
+        sort: "relevance",
+        select: "title,author,published,abstract,URL,is-referenced-by-count,DOI,type,container-title,publisher",
+      },
+      headers: { "User-Agent": "ResearchLens/1.0 (mailto:researchlens@example.com)" },
+      timeout: 10000,
+    });
+
+    const items = response.data.message?.items || [];
+
+    const PAID_PUBLISHERS = [
+      { keyword: "IEEE", source: "IEEE Xplore" },
+      { keyword: "Springer", source: "SpringerLink" },
+      { keyword: "Elsevier", source: "ScienceDirect" },
+      { keyword: "ACM", source: "ACM Digital Library" },
+      { keyword: "Nature", source: "Nature" },
+      { keyword: "Wiley", source: "Wiley Online" },
+      { keyword: "Taylor", source: "Taylor & Francis" },
+      { keyword: "Oxford", source: "Oxford Academic" },
+    ];
+
+    return items
+      .filter(item => {
+        const publisher = (item.publisher || "").toLowerCase();
+        const container = ((item["container-title"] || [])[0] || "").toLowerCase();
+        return PAID_PUBLISHERS.some(p =>
+          publisher.includes(p.keyword.toLowerCase()) ||
+          container.includes(p.keyword.toLowerCase())
+        );
+      })
+      .slice(0, limit)
+      .map(item => {
+        const publisher = item.publisher || "";
+        const container = (item["container-title"] || [])[0] || "";
+        const matched = PAID_PUBLISHERS.find(p =>
+          publisher.toLowerCase().includes(p.keyword.toLowerCase()) ||
+          container.toLowerCase().includes(p.keyword.toLowerCase())
+        );
+
+        const authors = (item.author || []).map(a =>
+          [a.given, a.family].filter(Boolean).join(" ")
+        ).map(name => ({ name }));
+
+        const year = item.published?.["date-parts"]?.[0]?.[0] || null;
+
+        return {
+          paperId: `paid-${item.DOI || Math.random()}`,
+          source: matched?.source || publisher || "Paid Journal",
+          title: Array.isArray(item.title) ? item.title[0] : item.title || "Untitled",
+          authors,
+          year,
+          citationCount: item["is-referenced-by-count"] || 0,
+          influentialCitationCount: 0,
+          abstract: item.abstract
+            ? item.abstract.replace(/<[^>]+>/g, "").trim()
+            : "Abstract not available. Visit the publisher website to read this paper.",
+          url: item.URL || `https://doi.org/${item.DOI}`,
+          pdfUrl: null,
+          doi: item.DOI || null,
+          accessType: "paid",
+          isOpenAccess: false,
+          score: 0,
+        };
+      });
+
+  } catch (error) {
+    console.error("[PaidPapers] CrossRef fetch error:", error.message);
+    return [];
+  }
+}
+
+module.exports = { getPaidPlatformLinks, PAID_PLATFORMS, fetchPaidPapers };
