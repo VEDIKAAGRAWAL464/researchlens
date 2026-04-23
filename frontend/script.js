@@ -15,6 +15,7 @@ const state = {
   searchHistory: JSON.parse(localStorage.getItem('searchHistory') || '[]'),
   isLoading: false,
   theme: localStorage.getItem('theme') || 'dark',
+    allResults: [],
   paidPlatforms: [],
   paidPapers: [],
 };
@@ -249,8 +250,8 @@ async function performSearch() {
 
   try {
     const response = await fetch(
-      `${CONFIG.BACKEND_URL}/research-search?q=${encodeURIComponent(state.searchQuery)}&limit=10`
-    );
+  CONFIG.BACKEND_URL + '/research-search?q=' + encodeURIComponent(state.searchQuery) + '&limit=30&perSource=10'
+);
 
     if (!response.ok) throw new Error("Search request failed");
 
@@ -263,6 +264,7 @@ async function performSearch() {
     state.paidPapers = data.paidPapers || [];
 
     state.searchTotal = results.length;
+state.allResults = results; // store all results for client-side pagination
     state.isLoading = false;
 
     hideSkeletons();
@@ -270,8 +272,8 @@ async function performSearch() {
     if (results.length === 0) {
       showEmptyState();
     } else {
-      const page = results.slice(state.searchOffset, state.searchOffset + 10);
-      showResults(page, results.length);
+      const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
+showResults(page, state.allResults.length);
       showPaidPlatforms(state.paidPlatforms);
       if (state.paidPapers.length > 0) {
         showPaidPaperCards(state.paidPapers);
@@ -410,18 +412,19 @@ dom.searchInput.addEventListener('keydown', (e) => {
 dom.clearSearch.addEventListener('click', clearSearch);
 
 // Pagination
-dom.prevBtn.addEventListener('click', () => {
+dom.prevBtn.addEventListener('click', function() {
   state.searchOffset = Math.max(0, state.searchOffset - 10);
-  performSearch();
+  const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
+  showResults(page, state.allResults.length);
   dom.contentSection.scrollIntoView({ behavior: 'smooth' });
 });
 
-dom.nextBtn.addEventListener('click', () => {
+dom.nextBtn.addEventListener('click', function() {
   state.searchOffset += 10;
-  performSearch();
+  const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
+  showResults(page, state.allResults.length);
   dom.contentSection.scrollIntoView({ behavior: 'smooth' });
 });
-
 // ══════════════════════════════════════════════════
 // SUGGESTIONS
 // ══════════════════════════════════════════════════

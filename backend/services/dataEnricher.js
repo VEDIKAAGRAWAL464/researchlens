@@ -73,8 +73,8 @@ async function enrichPaperMetadata(paper) {
  * Batch enrichment with rate control
  */
 async function enrichPaperBatch(papers) {
-  const batch = papers.slice(0, 15);
-  const remaining = papers.slice(15);
+  const batch = papers.slice(0, 30);
+const remaining = papers.slice(30);
 
   const enriched = [];
 

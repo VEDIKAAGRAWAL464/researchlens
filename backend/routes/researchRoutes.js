@@ -35,8 +35,8 @@ function setCache(key, data) {
 // ── Route 1: Unified Paper Search ─────────────────────────────
 router.get("/research-search", async (req, res) => {
   const query = req.query.q;
-  const limit = parseInt(req.query.limit) || 8;
-const perSource = 4; // fetch from each source independently
+  const limit = parseInt(req.query.limit) || 30;
+const perSource = parseInt(req.query.perSource) || 10;
   const sources = (req.query.sources || "arxiv,semantic,crossref,pubmed,core").split(",");
 
   if (!query) return res.status(400).json({ error: "Query is required" });
