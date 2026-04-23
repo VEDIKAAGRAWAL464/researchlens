@@ -232,9 +232,7 @@ function normalizePaper(paper) {
     url: paper.link || paper.llink || "#",
     pdfUrl: pdfUrl,
     source: paper.source || "Unknown",
-    isOpenAccess: pdfUrl ? true :
-      paper.source === "arXiv" ? true :
-        paper.source === "CORE" ? true : false,
+    isOpenAccess: paper.accessType === 'paid' ? false : true,
     venue: paper.source || "",
   };
 }
