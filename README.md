@@ -4,7 +4,7 @@
 
 ResearchLens is a web-based platform that lets researchers and students search for academic papers by topic and instantly receive structured, AI-generated insights — covering problem statement, methodology, contributions, results, and limitations — all in one place. No more jumping between Google Scholar, arXiv, and PubMed manually.
 
-🌐 **Live Demo:** [researchlens-git-main-vedika-agrawals-projects.vercel.app](https://researchlens-cyan.vercel.app/)
+🌐 **Live Demo:** [researchlens-cyan.vercel.app](https://researchlens-cyan.vercel.app/)
 
 ---
 
