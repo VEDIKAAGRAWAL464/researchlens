@@ -8,7 +8,11 @@ const app = express();
 
 // ── CORS ───────────────────────────────────────────────────────
 app.use(cors({
-  origin: "http://127.0.0.1:5500",  // VS Code Live Server frontend URL
+  origin: [
+    "http://127.0.0.1:5500",
+    /\.vercel\.app$/,
+    process.env.FRONTEND_URL,
+  ].filter(Boolean),
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
