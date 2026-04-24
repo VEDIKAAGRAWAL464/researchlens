@@ -15,7 +15,7 @@ const state = {
   searchHistory: JSON.parse(localStorage.getItem('searchHistory') || '[]'),
   isLoading: false,
   theme: localStorage.getItem('theme') || 'dark',
-    allResults: [],
+  allResults: [],
   paidPlatforms: [],
   paidPapers: [],
 };
@@ -250,8 +250,8 @@ async function performSearch() {
 
   try {
     const response = await fetch(
-  CONFIG.BACKEND_URL + '/research-search?q=' + encodeURIComponent(state.searchQuery) + '&limit=30&perSource=10'
-);
+      CONFIG.BACKEND_URL + '/research-search?q=' + encodeURIComponent(state.searchQuery) + '&limit=30&perSource=10'
+    );
 
     if (!response.ok) throw new Error("Search request failed");
 
@@ -264,7 +264,7 @@ async function performSearch() {
     state.paidPapers = data.paidPapers || [];
 
     state.searchTotal = results.length;
-state.allResults = results; // store all results for client-side pagination
+    state.allResults = results; // store all results for client-side pagination
     state.isLoading = false;
 
     hideSkeletons();
@@ -273,7 +273,7 @@ state.allResults = results; // store all results for client-side pagination
       showEmptyState();
     } else {
       const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
-showResults(page, state.allResults.length);
+      showResults(page, state.allResults.length);
       showPaidPlatforms(state.paidPlatforms);
       if (state.paidPapers.length > 0) {
         showPaidPaperCards(state.paidPapers);
@@ -412,14 +412,14 @@ dom.searchInput.addEventListener('keydown', (e) => {
 dom.clearSearch.addEventListener('click', clearSearch);
 
 // Pagination
-dom.prevBtn.addEventListener('click', function() {
+dom.prevBtn.addEventListener('click', function () {
   state.searchOffset = Math.max(0, state.searchOffset - 10);
   const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
   showResults(page, state.allResults.length);
   dom.contentSection.scrollIntoView({ behavior: 'smooth' });
 });
 
-dom.nextBtn.addEventListener('click', function() {
+dom.nextBtn.addEventListener('click', function () {
   state.searchOffset += 10;
   const page = state.allResults.slice(state.searchOffset, state.searchOffset + 10);
   showResults(page, state.allResults.length);
@@ -478,7 +478,7 @@ function createPaperCard(paper, variant = 'search') {
       Open Access
     </span>`
         : ''
-      }
+    }
       </div>
       <div class="paper-actions">
         ${variant === 'search' ? `
@@ -515,10 +515,12 @@ function createPaperCard(paper, variant = 'search') {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         ${(paper.citationCount || 0).toLocaleString()} citations
       </div>
-      <button class="btn-summary" data-paper-id="${paper.paperId}">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-        AI Summary
-      </button>
+      ${!paper.abstract || paper.abstract.startsWith("Abstract not available") ? '' : `
+<button class="btn-summary" data-paper-id="${paper.paperId}">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+  AI Summary
+</button>
+`}
     </div>
   `;
 
@@ -536,7 +538,9 @@ function createPaperCard(paper, variant = 'search') {
 
   // Summary button
   const summaryBtn = card.querySelector('.btn-summary');
-  summaryBtn.addEventListener('click', () => openSummaryModal(paper));
+  if (summaryBtn) {
+    summaryBtn.addEventListener('click', () => openSummaryModal(paper));
+  }
 
   return card;
 }
